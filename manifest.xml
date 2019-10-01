@@ -1,0 +1,8 @@
+<package format="2">
+  <name>MPU6050-tf</name>
+  <description>
+  This package provides MPU6050 to tf message.
+  </description>
+  <depend package="tf"/>
+  <depend package="nav_msgs"/>
+</package>
