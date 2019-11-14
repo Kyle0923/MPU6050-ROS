@@ -2,9 +2,9 @@
 #include <cmath>
 #include <stdexcept>
 #include <pigpiod_if2.h>
-#include "gyro_gpio_if.hpp"
+#include "mpu6050_gpio_if.hpp"
 
-static constexpr unsigned GYRO_I2C_ADDRESS = 0x68;
+static constexpr unsigned MPU6050_I2C_ADDRESS = 0x68;
 
 static constexpr unsigned PWR_MGMT_1   = 0x6B;
 static constexpr unsigned SMPLRT_DIV   = 0x19;
@@ -41,7 +41,7 @@ static constexpr double GYRO_SENSITIVITY  = 131.0;
 static constexpr double PI = 3.14159265359;
 static constexpr double g = 9.81; // m/s^2
 
-int16_t GyroGpioIF::readRawData(const unsigned addr)
+int16_t Mpu6050GpioIF::readRawData(const unsigned addr)
 {
     uint16_t highByte, lowByte;
     highByte = static_cast<uint8_t>(i2c_read_word_data(mPiHandle, mI2CHandle, addr));
@@ -50,13 +50,13 @@ int16_t GyroGpioIF::readRawData(const unsigned addr)
     return static_cast<int16_t>(unsignValue);
 }
 
-void GyroGpioIF::calibration(const float duration, const int samples)
+void Mpu6050GpioIF::calibration(const float duration, const int samples)
 {
-    GyroData total {0,0,0,0,0,0};
-    GyroData newData {0,0,0,0,0,0};
+    Mpu6050Data total {0,0,0,0,0,0};
+    Mpu6050Data newData {0,0,0,0,0,0};
     for(int counter = 0; counter < samples; ++counter)
     {
-        newData = readGyroData();
+        newData = readData();
         total.accel_x += newData.accel_x;
         total.accel_y += newData.accel_y;
         total.accel_z += newData.accel_z - g;
@@ -80,9 +80,9 @@ void GyroGpioIF::calibration(const float duration, const int samples)
 
 }
 
-GyroData GyroGpioIF::readGyroData()
+Mpu6050Data Mpu6050GpioIF::readData()
 {
-    GyroData gyroData{0, 0, 0, 0, 0, 0};
+    Mpu6050Data Mpu6050Data{0, 0, 0, 0, 0, 0};
 
     int16_t rawAx = readRawData(ACCEL_XOUT_H);
     int16_t rawAy = readRawData(ACCEL_YOUT_H);
@@ -92,26 +92,26 @@ GyroData GyroGpioIF::readGyroData()
     int16_t rawGz = readRawData(GYRO_ZOUT_H);
 
     // unit: m/s^2
-    gyroData.accel_x = static_cast<double>(rawAx) * g / ACCEL_SENSITIVITY - mAccelXBias;
-    gyroData.accel_y = static_cast<double>(rawAy) * g / ACCEL_SENSITIVITY - mAccelYBias;
-    gyroData.accel_z = static_cast<double>(rawAz) * g / ACCEL_SENSITIVITY - mAccelZBias;
+    Mpu6050Data.accel_x = static_cast<double>(rawAx) * g / ACCEL_SENSITIVITY - mAccelXBias;
+    Mpu6050Data.accel_y = static_cast<double>(rawAy) * g / ACCEL_SENSITIVITY - mAccelYBias;
+    Mpu6050Data.accel_z = static_cast<double>(rawAz) * g / ACCEL_SENSITIVITY - mAccelZBias;
 
     // unit: rad/s
-    gyroData.gyro_x = static_cast<double>(rawGx) * PI / 180 / GYRO_SENSITIVITY - mGyroXBias;
-    gyroData.gyro_y = static_cast<double>(rawGy) * PI / 180 / GYRO_SENSITIVITY - mGyroYBias;
-    gyroData.gyro_z = static_cast<double>(rawGz) * PI / 180 / GYRO_SENSITIVITY - mGyroZBias;
+    Mpu6050Data.gyro_x = static_cast<double>(rawGx) * PI / 180 / GYRO_SENSITIVITY - mGyroXBias;
+    Mpu6050Data.gyro_y = static_cast<double>(rawGy) * PI / 180 / GYRO_SENSITIVITY - mGyroYBias;
+    Mpu6050Data.gyro_z = static_cast<double>(rawGz) * PI / 180 / GYRO_SENSITIVITY - mGyroZBias;
 
-    // ROS_INFO("Ax: %f", gyroData.accel_x);
-    // ROS_INFO("Ay: %f", gyroData.accel_y);
-    // ROS_INFO("Az: %f", gyroData.accel_z);
-    // ROS_INFO("Gx: %f", gyroData.gyro_x);
-    // ROS_INFO("Gy: %f", gyroData.gyro_y);
-    // ROS_INFO("Gz: %f", gyroData.gyro_z);
+    // ROS_INFO("Ax: %f", Mpu6050Data.accel_x);
+    // ROS_INFO("Ay: %f", Mpu6050Data.accel_y);
+    // ROS_INFO("Az: %f", Mpu6050Data.accel_z);
+    // ROS_INFO("Gx: %f", Mpu6050Data.gyro_x);
+    // ROS_INFO("Gy: %f", Mpu6050Data.gyro_y);
+    // ROS_INFO("Gz: %f", Mpu6050Data.gyro_z);
 
-    return gyroData;
+    return Mpu6050Data;
 }
 
-void GyroGpioIF::initMPU6050()
+void Mpu6050GpioIF::initMPU6050()
 {
     int status = 0;
     status |= i2c_write_byte_data(mPiHandle, mI2CHandle, SMPLRT_DIV, 0x07); // 1kHz
@@ -126,7 +126,7 @@ void GyroGpioIF::initMPU6050()
     }
 }
 
-GyroGpioIF::GyroGpioIF():
+Mpu6050GpioIF::Mpu6050GpioIF():
     mAccelXBias(0), mAccelYBias(0), mAccelZBias(0), mGyroXBias(0), mGyroYBias(0), mGyroZBias(0)
 {
     mPiHandle = pigpio_start(nullptr, nullptr);
@@ -134,7 +134,7 @@ GyroGpioIF::GyroGpioIF():
     {
         throw std::runtime_error("unable to start pigpio");
     }
-    mI2CHandle = i2c_open(mPiHandle, 1U, GYRO_I2C_ADDRESS, 0);
+    mI2CHandle = i2c_open(mPiHandle, 1U, MPU6050_I2C_ADDRESS, 0);
     if (mI2CHandle < 0)
     {
         throw std::runtime_error("unable to open I2C");
@@ -142,7 +142,7 @@ GyroGpioIF::GyroGpioIF():
     initMPU6050();
 }
 
-GyroGpioIF::~GyroGpioIF()
+Mpu6050GpioIF::~Mpu6050GpioIF()
 {
     i2c_close(mPiHandle, mI2CHandle);
     pigpio_stop(mPiHandle);

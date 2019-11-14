@@ -1,7 +1,7 @@
-#ifndef GYRO_GPIO_IF_HPP
-#define GYRO_GPIO_IF_HPP
+#ifndef MPU6050_GPIO_IF_HPP
+#define MPU6050_GPIO_IF_HPP
 
-struct GyroData
+struct Mpu6050Data
 {
     double accel_x;
     double accel_y;
@@ -11,12 +11,12 @@ struct GyroData
     double gyro_z;
 };
 
-class GyroGpioIF
+class Mpu6050GpioIF
 {
     public:
-        GyroGpioIF();
-        ~GyroGpioIF();
-        GyroData readGyroData();
+        Mpu6050GpioIF();
+        ~Mpu6050GpioIF();
+        Mpu6050Data readData();
         void calibration(const float duration, const int samples);
 
     private:
@@ -32,4 +32,4 @@ class GyroGpioIF
         double mGyroZBias;
 };
 
-#endif // GYRO_GPIO_IF_HPP
+#endif // MPU6050_GPIO_IF_HPP

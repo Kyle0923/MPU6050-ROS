@@ -1,11 +1,11 @@
 #include <stdexcept>
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
-#include "gyro_gpio_if.hpp"
+#include "mpu6050_gpio_if.hpp"
 
 int main(int argc, char** argv){
-    ros::init(argc, argv, "gyro_node");
-    std::cout << "Initializing gyro node\n>> starting pigpio daemon..." << std::endl;
+    ros::init(argc, argv, "mpu6050_node");
+    std::cout << "Initializing mpu6050 node\n>> starting pigpio daemon..." << std::endl;
 
     if (0 != system("if ! pgrep -x \"pigpiod\" > /dev/null\nthen\nsudo pigpiod\nfi"))
     {
@@ -14,10 +14,10 @@ int main(int argc, char** argv){
 
     tf::TransformBroadcaster odom_broadcaster;
 
-    GyroGpioIF gyro;
-    GyroData gyroData;
+    Mpu6050GpioIF mpu6050;
+    Mpu6050Data mpu6050Data;
     std::cout << "Calibrating MPU6050, please wait for 1 sec..." << std::endl;
-    gyro.calibration(1, 100);
+    mpu6050.calibration(1, 100);
 
     double x = 0.0;
     double y = 0.0;
@@ -39,17 +39,17 @@ int main(int argc, char** argv){
     ros::Rate loop_rate(10);
     while (ros::ok())
     {
-        gyroData = gyro.readGyroData();
-        ROS_INFO("ACCEL: %f, %f, %f\t\tGYRO: %f, %f, %f", gyroData.accel_x, gyroData.accel_y, gyroData.accel_z, gyroData.gyro_x, gyroData.gyro_y, gyroData.gyro_z);
+        mpu6050Data = mpu6050.readData();
+        ROS_INFO("ACCEL: %f, %f, %f\t\tGYRO: %f, %f, %f", mpu6050Data.accel_x, mpu6050Data.accel_y, mpu6050Data.accel_z, mpu6050Data.gyro_x, mpu6050Data.gyro_y, mpu6050Data.gyro_z);
         // ros::Duration(0.5).sleep();
         current_time = ros::Time::now();
 
         //compute odometry in a typical way given the velocities of the robot
         dt = (current_time - last_time).toSec();
 
-        vx += gyroData.accel_x;
-        vy += gyroData.accel_y;
-        vth = gyroData.gyro_z;
+        vx += mpu6050Data.accel_x;
+        vy += mpu6050Data.accel_y;
+        vth = mpu6050Data.gyro_z;
 
         delta_x = (vx * cos(th) - vy * sin(th)) * dt;
         delta_y = (vx * sin(th) + vy * cos(th)) * dt;
