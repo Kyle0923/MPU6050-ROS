@@ -44,8 +44,8 @@ static constexpr double g = 9.81; // m/s^2
 int16_t Mpu6050GpioIF::readRawData(const unsigned addr)
 {
     uint16_t highByte, lowByte;
-    highByte = static_cast<uint8_t>(i2c_read_word_data(mPiHandle, mI2CHandle, addr));
-    lowByte = static_cast<uint8_t>(i2c_read_word_data(mPiHandle, mI2CHandle, addr + 1U));
+    highByte = static_cast<uint8_t>(i2c_read_byte_data(mPiHandle, mI2CHandle, addr));
+    lowByte = static_cast<uint8_t>(i2c_read_byte_data(mPiHandle, mI2CHandle, addr + 1U));
     uint16_t unsignValue = (highByte << 8) | lowByte;
     return static_cast<int16_t>(unsignValue);
 }
